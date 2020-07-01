@@ -1,0 +1,29 @@
+server:
+  gate:
+    protocol: "websocket"
+  login:
+    protocol: "http"
+
+etcd:
+  - "192.168.0.115:2379"
+  - "192.168.0.115:22379"
+  - "192.168.0.115:32379"
+
+mysql:
+  master:
+    m1:
+      host: "192.168.0.115"
+      port: 3306
+      user: "root"
+      pass: "123456"
+  slaver:
+    s1:
+      host: "192.168.0.115"
+      port: 3306
+      user: "root"
+      pass: "123456"
+
+dbName:
+  login: "account"
+  gate:  "eassy"
+  game:  "eassy"
