@@ -4,6 +4,7 @@ import (
 	"eassy/core/server"
 	"eassy/server/game"
 	"eassy/server/gateway"
+	"eassy/server/hall"
 	"eassy/server/login"
 	"errors"
 	"github.com/spf13/viper"
@@ -33,6 +34,8 @@ func Run(server *server.Server) (err error) {
 		err = login.Run(server)
 	case "game":
 		err = game.Run(server)
+	case "hall":
+		err = hall.Run(server)
 	default:
 		err = errors.New("无效的服务类型！")
 	}

@@ -16,7 +16,7 @@ type CliMgr struct {
 
 type ICliMgr interface {
 	New(ws *websocket.Conn) *Cli
-	Destroy(ws *websocket.Conn)
+	Destroy(cliId int64)
 	GetCliIdByWs(ws *websocket.Conn) int64
 }
 
