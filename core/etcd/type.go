@@ -10,7 +10,7 @@ import (
 
 type ServiceInfo struct {
 	Name string
-	Ip   string
+	Addr string
 }
 
 type Service struct {

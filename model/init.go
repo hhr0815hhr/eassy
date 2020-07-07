@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 )
@@ -18,7 +19,7 @@ func InitDB(serverType string) {
 		dbName   string
 	)
 	masterConf := viper.GetStringMapString("mysql.master.m1")
-	slaverConf := viper.GetStringMapString("mysql.slaver")
+	slaverConf := viper.GetStringMapString("mysql.slaver.s1")
 	dbName = viper.GetString("dbName." + serverType)
 	connStrW = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		masterConf["user"], //config.MysqlUser,
@@ -45,6 +46,7 @@ func InitDB(serverType string) {
 	}
 
 	setDbPool()
+	autoMigrate()
 }
 
 //连接池
@@ -54,4 +56,10 @@ func setDbPool() {
 
 	dbWrite.DB().SetMaxIdleConns(10)
 	dbWrite.DB().SetMaxOpenConns(50)
+}
+
+func autoMigrate() {
+	dbWrite.SingularTable(true)
+	dbRead.SingularTable(true)
+	dbWrite.AutoMigrate(&Account{})
 }

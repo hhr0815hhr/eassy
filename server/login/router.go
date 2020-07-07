@@ -7,5 +7,6 @@ func setRouter(r *gin.Engine) {
 	{
 		api.POST("/login", loginHandler)
 		api.POST("/register", registerHandler)
+		api.POST("/verify", verifyHandler)
 	}
 }

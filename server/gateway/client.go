@@ -64,7 +64,7 @@ type Cli struct {
 type ICli interface {
 	RecvData()
 	HandleData()
-	Dispatch()
+	Dispatch(content []byte)
 	HeartBeat()
 	Send(protoId int, buffer []byte)
 	Disconnect()
@@ -105,7 +105,7 @@ func (p *Cli) HandleData() {
 			if string(content) == "PING" {
 				go p.HeartBeat()
 			} else {
-				go p.Dispatch()
+				go p.Dispatch(content)
 			}
 		}
 	}
@@ -121,8 +121,9 @@ func (p *Cli) Reconnect() {
 	//todo
 }
 
-func (p *Cli) Dispatch() {
+func (p *Cli) Dispatch(content []byte) {
 	//todo: dispatch msg
+	//解包
 	p.Send(websocket.TextMessage, []byte("hahaha"))
 }
 

@@ -20,7 +20,7 @@ func RegisterService(nodeType string, port string) {
 	}
 	serviceInfo := ServiceInfo{
 		Name: nodeType,
-		Ip:   serverIP + ":" + port,
+		Addr: serverIP + ":" + port,
 	}
 	regService, err := newService(serviceInfo, etcdSlice)
 	if err != nil {

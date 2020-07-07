@@ -38,7 +38,6 @@ func main() {
 		}
 	}()
 
-	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
@@ -51,7 +50,7 @@ func main() {
 }
 
 func init() {
-	flag.StringVar(&serverType, "t", "gate", "server type")
+	flag.StringVar(&serverType, "t", "login", "server type")
 	flag.StringVar(&serverPort, "p", "5566", "server port")
 	flag.BoolVar(&help, "h", false, "帮助信息")
 }
