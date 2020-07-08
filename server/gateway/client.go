@@ -2,6 +2,8 @@ package gateway
 
 import (
 	"eassy/core/component/idService"
+	"eassy/core/component/msgService"
+	"eassy/core/component/pkgService"
 	"github.com/gorilla/websocket"
 	"log"
 	"sync"
@@ -25,10 +27,10 @@ func (p *CliMgr) New(ws *websocket.Conn) *Cli {
 	defer p.Lock.Unlock()
 	cliId := idService.GenerateID().Int64()
 	p.CliMap[cliId] = &Cli{
-		Id:        cliId,
-		Conn:      ws,
-		MsgChan:   make(chan []byte, 100),
-		AliveChan: make(chan struct{}, 1),
+		Id:         cliId,
+		Conn:       ws,
+		ReqMsgChan: make(chan *MsgInfo, 100),
+		AliveChan:  make(chan struct{}, 1),
 	}
 	return p.CliMap[cliId]
 }
@@ -55,10 +57,15 @@ type Cli struct {
 	Id             int64
 	Conn           *websocket.Conn
 	ServerId       uint
-	MsgChan        chan []byte
+	ReqMsgChan     chan *MsgInfo
 	AliveChan      chan struct{} //连接是否正常
 	HeartBeatTimes int
 	LastBeatTime   time.Time
+}
+
+type MsgInfo struct {
+	Route int
+	Body  []byte
 }
 
 type ICli interface {
@@ -79,16 +86,23 @@ func (p *Cli) RecvData() {
 		//msgType int
 		content []byte
 		err     error
+		info    = new(MsgInfo)
 	)
 	for {
 		_, content, err = p.Conn.ReadMessage()
 		if err != nil {
 			break
 		}
-		if len(content) == 0 || len(content) >= 4096 {
+		length := len(content)
+		if length == 0 || length >= 4096 {
 			break
 		}
-		p.MsgChan <- content
+		info.Route, info.Body = pkgService.PkgDecode(content)
+		//bodyLen := pkgService.GetPkgBodyLen(content)
+		//if bodyLen+pkgService.PkgHeadBytes == length {
+		p.ReqMsgChan <- info
+		//}
+
 	}
 	return
 }
@@ -96,16 +110,16 @@ func (p *Cli) RecvData() {
 func (p *Cli) HandleData() {
 	for {
 		select {
-		case content, ok := <-p.MsgChan:
+		case info, ok := <-p.ReqMsgChan:
 			//fmt.Println(string(content))
 			if !ok {
 				//p.Send(websocket.CloseMessage,[]byte{})
 				return
 			}
-			if string(content) == "PING" {
+			if info.Route == 0 {
 				go p.HeartBeat()
 			} else {
-				go p.Dispatch(content)
+				go p.Dispatch(info.Route, info.Body)
 			}
 		}
 	}
@@ -114,21 +128,27 @@ func (p *Cli) HandleData() {
 func (p *Cli) HeartBeat() {
 	p.HeartBeatTimes = 0
 	p.LastBeatTime = time.Now()
-	p.Send(websocket.PongMessage, []byte("PONG"))
+	p.Send([]byte("PONG"))
 }
 
 func (p *Cli) Reconnect() {
 	//todo
 }
 
-func (p *Cli) Dispatch(content []byte) {
+func (p *Cli) Dispatch(route int, body []byte) {
 	//todo: dispatch msg
-	//解包
-	p.Send(websocket.TextMessage, []byte("hahaha"))
+	msgInfo, ok := msgService.GetMsgService().GetMsgByRouteId(route)
+	if !ok {
+		log.Print("未注册的route ！")
+		return
+	}
+	//msgInfo.
+	_ = msgInfo
+	p.Send([]byte("hahaha"))
 }
 
-func (p *Cli) Send(protoId int, buffer []byte) {
-	err := p.Conn.WriteMessage(protoId, buffer)
+func (p *Cli) Send(buffer []byte) {
+	err := p.Conn.WriteMessage(websocket.BinaryMessage, buffer)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -143,7 +163,7 @@ func (p *Cli) Disconnect() {
 	}
 	p.AliveChan <- struct{}{}
 	close(p.AliveChan)
-	close(p.MsgChan)
+	close(p.ReqMsgChan)
 }
 
 func (p *Cli) Ticker() {
